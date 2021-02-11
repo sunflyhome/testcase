@@ -200,20 +200,6 @@
                 }
             }
         },
-        "S3AccessPoint": {
-            "Type": "AWS::S3::AccessPoint",
-            "Properties": {
-                "Bucket": {
-                    "Ref": "S3RepoBucket"
-                },
-                "PublicAccessBlockConfiguration": {
-                    "BlockPublicAcls": true,
-                    "IgnorePublicAcls": true,
-                    "BlockPublicPolicy": true,
-                    "RestrictPublicBuckets": true
-                }
-            }
-        },
         "InstanceSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -232,12 +218,7 @@
         }
     },
     "Outputs": {
-        "S3AccessPointArn": {
-            "Value": {
-                "Ref": "S3AccessPoint"
-            },
-            "Description": "ARN of the Repo S3 access point."
-        },
+        
         "InstanceId": {
             "Description": "InstanceId of the newly created EC2 instance",
             "Value": {
