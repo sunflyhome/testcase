@@ -14,4 +14,20 @@
 
 ## Copy printAweSome rpm from question 5 to s3 bucket under x86_64
 
+### test:
+
+wget https://mc-test-repo-20210210.s3-us-west-2.amazonaws.com/x86_64/printAweSome-1-0.x86_64.rpm
+--2021-02-11 11:40:58--  https://mc-test-repo-20210210.s3-us-west-2.amazonaws.com/x86_64/printAweSome-1-0.x86_64.rpm
+Resolving mc-test-repo-20210210.s3-us-west-2.amazonaws.com (mc-test-repo-20210210.s3-us-west-2.amazonaws.com)... 52.218.201.9
+Connecting to mc-test-repo-20210210.s3-us-west-2.amazonaws.com (mc-test-repo-20210210.s3-us-west-2.amazonaws.com)|52.218.201.9|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 2452 (2.4K) [binary/octet-stream]
+Saving to: ‘printAweSome-1-0.x86_64.rpm’
+
+printAweSome-1-0.x86_64.rpm     100%[======================================================>]   2.39K  --.-KB/s    in 0.001s  
+
+2021-02-11 11:40:59 (2.73 MB/s) - ‘printAweSome-1-0.x86_64.rpm’ saved [2452/2452]
+
+
+
 ## Install rpm to default folder /etc/printAweSome

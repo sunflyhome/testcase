@@ -2,6 +2,11 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "CFN stack to create S3 bucket, role, instance Profile, Ec2 instance with installation of scripts",
     "Parameters": {
+        "VpcName": {
+            "Description": "Vpc to use for access point access",
+            "Type": "String",
+            "Default": "vpc-7fd91606"
+        },
         "KeyName": {
             "Description": "KeyPair name that will enable SSH Access",
             "Type": "String",
@@ -90,9 +95,12 @@
                                         "s3:GetObject",
                                         "s3:PutObject",
                                         "s3:ListBucket",
-                                        "s3:CreateBucket"
+                                        "s3:CreateBucket",
+                                        "s3:ListAllMyBuckets",
+                                        "s3:HeadObject"
                                     ],
                                     "Effect": "Allow",
+                                    
                                     "Resource": [
                                         {
                                             "Fn::Join": [
@@ -145,29 +153,16 @@
                             "",
                             [
                                 "#!/bin/bash -ex\n",
-                                "echo 'installing rpmuild packages'\n",
-                                "yum install rpm-build rpmdevtools -y\n",
-                                "yum install ec2-net-utils -y\n",
-                                "cd /home/ec2-user\n",
-                                "rpmdev-setuptree;mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS,tmp}\n",
-                                "aws s3 cp s3://mc-test-repo-20210210/rpmmacros /home/ec2-user/.rpmmacros\n",
-                                "cd /home/ec2-user/rpmbuild/SOURCES\n",
-                                "mkdir printAweSome-1\n",
-                                "aws s3 cp s3://mc-test-repo-20210210/printAweSome.sh /home/ec2-user/rpmbuild/SOURCES/printAweSome-1/printAweSome.sh\n",
-                                "tar czf printAweSome-1.0.tar.gz printAweSome-1\n",
-                                "aws s3 cp s3://mc-test-repo-20210210/printAweSome.spec /home/ec2-user/rpmbuild/SPECS/printAweSome.spec\n",
-                                "cd /home/ec2-user/rpmbuild; rpmbuild -ba SPECS/printAweSome.spec\n",
-                                "echo 'printAweSome has been built'\n",
                                 "echo 'Installing S3 yum plugin'\n",
                                 "yum install git -y\n",
                                 "cd /tmp;git clone https://github.com/seporaitis/yum-s3-iam\n",
                                 "cp /tmp/yum-s3-iam/s3iam.py /usr/lib/yum-plugins/\n",
                                 "cp /tmp/yum-s3-iam/s3iam.conf /etc/yum/pluginconf.d/ \n",
                                 "cp /tmp/s3iam.repo /etc/yum.repos.d/\n",
-                                "sed -i 's/your-bucket-name.s3.amazonaws.com/mc-test-repo-20210210.s3-us-west-2.amazonaws.com/g' /etc/yum.repos.d/s3iam.repo\n",                                "aws s3api put-object --bucket mc-test-repo-20210210 --key x86_64/printAweSome-1-0.x86_64.rpm --body /home/ec2-user/rpmbuild/RPMS/x86_64/printAweSome-1-0.x86_64.rpm\n",
+                                "sed -i 's/http/https/g' /etc/yum.repos.d/s3iam.repo\n",
+                                "sed -i 's/your-bucket-name.s3.amazonaws.com/mc-test-repo-20210210.s3-us-west-2.amazonaws.com/g' /etc/yum.repos.d/s3iam.repo\n",
                                 "yum clean all\n",
                                 "yum install -y printAweSome || echo Installed\n"
-
                             ]
                         ]
                     }
@@ -177,7 +172,6 @@
                 },
                 "IamInstanceProfile": {
                     "Ref": "RootInstanceProfile"
-                            
                 },
                 "SecurityGroups": [
                     {
@@ -206,6 +200,20 @@
                 }
             }
         },
+        "S3AccessPoint": {
+            "Type": "AWS::S3::AccessPoint",
+            "Properties": {
+                "Bucket": {
+                    "Ref": "S3RepoBucket"
+                },
+                "PublicAccessBlockConfiguration": {
+                    "BlockPublicAcls": true,
+                    "IgnorePublicAcls": true,
+                    "BlockPublicPolicy": true,
+                    "RestrictPublicBuckets": true
+                }
+            }
+        },
         "InstanceSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -224,6 +232,12 @@
         }
     },
     "Outputs": {
+        "S3AccessPointArn": {
+            "Value": {
+                "Ref": "S3AccessPoint"
+            },
+            "Description": "ARN of the Repo S3 access point."
+        },
         "InstanceId": {
             "Description": "InstanceId of the newly created EC2 instance",
             "Value": {
