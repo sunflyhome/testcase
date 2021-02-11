@@ -1,0 +1,261 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CFN stack to create S3 bucket, role, instance Profile, Ec2 instance with installation of scripts",
+    "Parameters": {
+        "KeyName": {
+            "Description": "KeyPair name that will enable SSH Access",
+            "Type": "String",
+            "Default": "testrepo"
+        },
+        "InstanceType": {
+            "Description": "General purpose",
+            "Type": "String",
+            "Default": "t2.micro",
+            "AllowedValues": [
+                "t2.micro"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "SSHLocation": {
+            "Description": "The IP address range that can be used to SSH to the EC2 instances",
+            "Type": "String",
+            "MinLength": "9",
+            "MaxLength": "18",
+            "Default": "0.0.0.0/0",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        }
+    },
+    "Mappings": {
+        "RegionMap": {
+            "us-west-2": {
+                "AMI": "ami-0e999cbd62129e3b1"
+            }
+        },
+        "AWSInstanceType2Arch": {
+            "t2.micro": {
+                "Arch": "HVM64"
+            }
+        },
+        "AWSInstanceType2NATArch": {
+            "t2.micro": {
+                "Arch": "NATHVM64"
+            }
+        },
+        "AWSRegionArch2AMI": {
+            "us-west-2": {
+                "PV64": "ami-7f77b31f",
+                "HVM64": "ami-0e999cbd62129e3b1",
+                "HVMG2": "ami-54d44234"
+            }
+        }
+    },
+    "Resources": {
+        "S3RepoBucket": {
+            "Type": "AWS::S3::Bucket",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "BucketName": "mc-test-repo-20210210"
+            }
+        },
+        "S3RepoRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Sid": "Stmt1613019484714",
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:PutObject",
+                                        "s3:ListBucket",
+                                        "s3:CreateBucket"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:s3:::",
+                                                    {
+                                                        "Ref": "S3RepoBucket"
+                                                    }
+                                                ]
+                                            ]
+                                        },
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:s3:::",
+                                                    {
+                                                        "Ref": "S3RepoBucket"
+                                                    },
+                                                    "/*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "RootInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "S3RepoRole"
+                    }
+                ]
+            }
+        },
+        "EC2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex\n",
+                                "echo 'installing rpmuild packages'\n",
+                                "yum install rpm-build rpmdevtools -y\n",
+                                "yum install ec2-net-utils -y\n",
+                                "cd /home/ec2-user\n",
+                                "rpmdev-setuptree\n",
+                                "aws s3 cp s3://mc-test-repo-20210210/rpmmacros /home/ec2-user/.rpmmacros\n",
+                                "cd /home/ec2-user/rpmbuild/SOURCES\n",
+                                "mkdir printAweSome-1\n",
+                                "aws s3 cp s3://mc-test-repo-20210210/printAweSome.sh /home/ec2-user/rpmbuild/SOURCES/printAweSome-1/printAweSome.sh\n",
+                                "tar czf printAweSome-1.0.tar.gz printAweSome-1\n",
+                                "aws s3 cp s3://mc-test-repo-20210210/printAweSome.spec /home/ec2-user/rpmbuild/SPECS/printAweSome.spec\n",
+                                "cd /home/ec2-user/rpmbuild; rpmbuild -ba SPECS/printAweSome.spec\n",
+                                "echo 'printAweSome has been built'\n",
+                                "echo 'Installing S3 yum plugin'\n",
+                                "yum install git -y\n",
+                                "cd /tmp;git clone https://github.com/seporaitis/yum-s3-iam\n",
+                                "cp /tmp/yum-s3-iam/s3iam.py /usr/lib/yum-plugins/\n",
+                                "cp /tmp/yum-s3-iam/s3iam.conf /etc/yum/pluginconf.d/ \n",
+                                "cp /tmp/s3iam.repo /etc/yum.repos.d/\n",
+                                "sed -i 's/your-bucket-name.s3.amazonaws.com/mc-test-repo-20210210.s3-us-west-2.amazonaws.com/g' /etc/yum.repos.d/s3iam.repo\n",                                "aws s3api put-object --bucket mc-test-repo-20210210 --key x86_64/printAweSome-1-0.x86_64.rpm --body /home/ec2-user/rpmbuild/RPMS/x86_64/printAweSome-1-0.x86_64.rpm\n",
+                                "yum clean all\n",
+                                "yum install -y printAweSome || echo Installed\n"
+
+                            ]
+                        ]
+                    }
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "IamInstanceProfile": {
+                    "Ref": "RootInstanceProfile"
+                            
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "InstanceSecurityGroup"
+                    }
+                ],
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AWSRegionArch2AMI",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Fn::FindInMap": [
+                                "AWSInstanceType2Arch",
+                                {
+                                    "Ref": "InstanceType"
+                                },
+                                "Arch"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "InstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable SSH access via port 22",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "SSHLocation"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "InstanceId": {
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance"
+            }
+        },
+        "AZ": {
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "PublicDNS": {
+            "Description": "Public DNSName of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance",
+                    "PublicDnsName"
+                ]
+            }
+        },
+        "PublicIP": {
+            "Description": "Public IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance",
+                    "PublicIp"
+                ]
+            }
+        }
+    }
+}
