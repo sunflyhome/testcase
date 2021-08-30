@@ -1,0 +1,117 @@
+"options": [
+          {
+            "selected": true,
+            "text": "read_iops",
+            "value": "read_iops"
+          },
+          {
+            "selected": false,
+            "text": "write_iops",
+            "value": "write_iops"
+          },
+          {
+            "selected": false,
+            "text": "read_latency",
+            "value": "read_latency"
+          },
+          {
+            "selected": true,
+            "text": "health_status",
+            "value": "health_status"
+          },
+          {
+            "selected": false,
+            "text": "write_latency",
+            "value": "write_latency"
+          },
+          {
+            "selected": true,
+            "text": "cpuutilization",
+            "value": "cpuutilization"
+          },
+          {
+            "selected": false,
+            "text": "query_duration",
+            "value": "query_duration"
+          },
+          {
+            "selected": false,
+            "text": "read_throughput",
+            "value": "read_throughput"
+          },
+          {
+            "selected": false,
+            "text": "wlmqueue_length",
+            "value": "wlmqueue_length"
+          },
+          {
+            "selected": false,
+            "text": "maintenance_mode",
+            "value": "maintenance_mode"
+          },
+          {
+            "selected": false,
+            "text": "write_throughput",
+            "value": "write_throughput"
+          },
+          {
+            "selected": true,
+            "text": "total_table_count",
+            "value": "total_table_count"
+          },
+          {
+            "selected": false,
+            "text": "wlmqueue_wait_time",
+            "value": "wlmqueue_wait_time"
+          },
+          {
+            "selected": false,
+            "text": "wlmrunning_queries",
+            "value": "wlmrunning_queries"
+          },
+          {
+            "selected": false,
+            "text": "commit_queue_length",
+            "value": "commit_queue_length"
+          },
+          {
+            "selected": false,
+            "text": "database_connections",
+            "value": "database_connections"
+          },
+          {
+            "selected": false,
+            "text": "query_runtime_breakdown",
+            "value": "query_runtime_breakdown"
+          },
+          {
+            "selected": false,
+            "text": "network_receive_throughput",
+            "value": "network_receive_throughput"
+          },
+          {
+            "selected": false,
+            "text": "percentage_disk_space_used",
+            "value": "percentage_disk_space_used"
+          },
+          {
+            "selected": false,
+            "text": "network_transmit_throughput",
+            "value": "network_transmit_throughput"
+          },
+          {
+            "selected": false,
+            "text": "queries_completed_per_second",
+            "value": "queries_completed_per_second"
+          },
+          {
+            "selected": false,
+            "text": "concurrency_scaling_active_clusters",
+            "value": "concurrency_scaling_active_clusters"
+          },
+          {
+            "selected": true,
+            "text": "max_configured_concurrency_scaling_clusters",
+            "value": "max_configured_concurrency_scaling_clusters"
+          }
+        ]
