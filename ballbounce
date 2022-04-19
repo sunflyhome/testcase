@@ -1,0 +1,8 @@
+# We have a box with up, right, down and left frame
+# we drop a ball to a frame randomly in the box.
+# Each frame has a bounce direction defined per frame. For example, up frame bounces ball to right frame, right -> bottom, bottom -> left, left -> up.
+# From above example, when ball hits up frame, up frame will bounce ball to right frame.
+# If a frame bounce ball to itself (when a frame is defined to bounce to itself, for example, rightr->right), we call "ball is so sticky to the frame". Game over
+# We give a number how many times ball travels
+# At end of travels, we want to see a travel list of frames
+# Based on above sample, if we throw a ball to right frame with 6 times , so ball's history for 6 times: right,bottom,left,up,right, bottom
